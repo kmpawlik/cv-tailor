@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/session';
-import { db, DATA_DIR } from '@/lib/db';
+import { getDb, DATA_DIR } from '@/lib/db';
 import { tailorCV } from '@/lib/tailor';
 import { renderCvHtml } from '@/lib/cv-html';
 import { htmlToPdf } from '@/lib/pdf';
@@ -16,6 +16,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const body = await req.json().catch(() => ({}));
   const languageOverride: 'pl' | 'en' | undefined = body.language;
 
+  const db = getDb();
   const job = db.prepare('SELECT * FROM jobs WHERE id = ?').get(jobId) as any;
   if (!job) return NextResponse.json({ error: 'job not found' }, { status: 404 });
   const profileRow = db.prepare('SELECT data_json FROM profile WHERE id = 1').get() as any;

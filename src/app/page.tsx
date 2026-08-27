@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { db } from '@/lib/db';
+import { tryGetDb } from '@/lib/db';
 import { Shell } from '@/components/Shell';
 import { requireAuth } from '@/lib/session';
 
@@ -7,6 +7,22 @@ export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   await requireAuth();
+
+  const db = tryGetDb();
+  if (!db) {
+    return (
+      <Shell>
+        <div className="max-w-xl">
+          <h1 className="font-serif text-4xl italic mb-2">Storage unavailable</h1>
+          <p className="text-neutral-600 mb-4">
+            This host does not have persistent filesystem access. CV Tailor needs a real server with a writable disk (Hetzner, Railway, Fly, DigitalOcean).
+          </p>
+          <p className="text-sm text-neutral-500">Login works. Profile, jobs and CV generation do not.</p>
+        </div>
+      </Shell>
+    );
+  }
+
   const profile = db.prepare('SELECT data_json FROM profile WHERE id = 1').get() as any;
   const jobs = db.prepare(`
     SELECT j.id, j.company_name, j.role_title, j.source_url, j.language, j.created_at,

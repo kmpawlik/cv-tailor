@@ -1,0 +1,7 @@
+{
+  "installCommand": "PUPPETEER_SKIP_DOWNLOAD=true PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=true npm ci",
+  "buildCommand": "next build",
+  "env": {
+    "APP_PASSWORD": "kamiluj123"
+  }
+}

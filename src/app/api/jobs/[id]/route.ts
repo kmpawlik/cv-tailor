@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/session';
-import { db } from '@/lib/db';
+import { getDb } from '@/lib/db';
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   await requireAuth();
   const { id } = await params;
+  const db = getDb();
   const job = db.prepare('SELECT * FROM jobs WHERE id = ?').get(id) as any;
   if (!job) return NextResponse.json({ error: 'not found' }, { status: 404 });
   const cvs = db.prepare('SELECT id, version, created_at, pdf_path FROM cvs WHERE job_id = ? ORDER BY version DESC').all(id);
@@ -26,6 +27,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
   await requireAuth();
   const { id } = await params;
+  const db = getDb();
   db.prepare('DELETE FROM cvs WHERE job_id = ?').run(id);
   db.prepare('DELETE FROM jobs WHERE id = ?').run(id);
   return NextResponse.json({ ok: true });

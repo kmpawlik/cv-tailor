@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/session';
-import { db } from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { scrapeUrl } from '@/lib/scrape';
 import { parseJob, researchCompany } from '@/lib/job';
 import { randomUUID } from 'node:crypto';
@@ -9,6 +9,7 @@ export const maxDuration = 300;
 
 export async function GET() {
   await requireAuth();
+  const db = getDb();
   const rows = db.prepare(`
     SELECT j.id, j.source_url, j.company_name, j.role_title, j.language, j.created_at,
       (SELECT COUNT(*) FROM cvs c WHERE c.job_id = j.id) AS cv_count
@@ -27,6 +28,7 @@ export async function POST(req: Request) {
   const parsed = await parseJob(raw);
   const research = await researchCompany(parsed.companyName, raw);
 
+  const db = getDb();
   const id = randomUUID();
   db.prepare(`
     INSERT INTO jobs (id, source_url, raw_text, company_name, role_title, research_json, requirements_json, language, created_at)

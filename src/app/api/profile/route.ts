@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/session';
-import { db } from '@/lib/db';
+import { getDb } from '@/lib/db';
 import { parseLinkedInZip } from '@/lib/linkedin';
 import { buildProfile, Profile } from '@/lib/profile';
 
@@ -8,6 +8,7 @@ export const maxDuration = 300;
 
 export async function GET() {
   await requireAuth();
+  const db = getDb();
   const row = db.prepare('SELECT data_json, free_text, links_json, updated_at FROM profile WHERE id = 1').get() as any;
   if (!row) return NextResponse.json({ profile: null });
   return NextResponse.json({
@@ -42,6 +43,7 @@ export async function POST(req: Request) {
 
   const profile = await buildProfile({ linkedin, cvPdfs, freeText, links });
 
+  const db = getDb();
   db.prepare(`
     INSERT INTO profile (id, data_json, raw_linkedin_json, free_text, links_json, updated_at)
     VALUES (1, @data, @linkedin, @free, @links, @ts)
