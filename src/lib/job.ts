@@ -1,4 +1,4 @@
-import { anthropic, MODEL, extractText, extractJson } from './claude';
+import { claudeCall, extractJson } from './claude';
 
 export type JobParsed = {
   companyName: string;
@@ -20,13 +20,9 @@ const PARSE_SYSTEM = `Extract structured information from a job posting.
 Return pure JSON. No commentary. If a field is unknown, use null or empty array.`;
 
 export async function parseJob(rawText: string): Promise<JobParsed> {
-  const resp = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 3000,
+  const text = await claudeCall({
     system: PARSE_SYSTEM,
-    messages: [{
-      role: 'user',
-      content: `Schema:
+    prompt: `Schema:
 {
   "companyName": string,
   "roleTitle": string,
@@ -46,9 +42,8 @@ ${rawText}
 """
 
 Return only the JSON.`
-    }]
   });
-  return extractJson<JobParsed>(extractText(resp));
+  return extractJson<JobParsed>(text);
 }
 
 export type CompanyResearch = {
@@ -64,16 +59,12 @@ export type CompanyResearch = {
 };
 
 export async function researchCompany(companyName: string, jobContext: string): Promise<CompanyResearch> {
-  const resp = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 4000,
-    system: `You are a research analyst. Use web_search to find current, credible information.
-Do not invent facts. Every claim should be backed by something found via web_search.
+  const text = await claudeCall({
+    system: `You are a research analyst. Use web search to find current, credible information.
+Do not invent facts. Every claim should be backed by something found via search.
 Return pure JSON matching the schema.`,
-    tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 } as any],
-    messages: [{
-      role: 'user',
-      content: `Research the company "${companyName}" for a job application.
+    webSearch: true,
+    prompt: `Research the company "${companyName}" for a job application.
 
 Context from the job posting:
 """
@@ -103,7 +94,6 @@ Then return JSON:
 }
 
 Return only the JSON.`
-    }]
   });
-  return extractJson<CompanyResearch>(extractText(resp));
+  return extractJson<CompanyResearch>(text);
 }

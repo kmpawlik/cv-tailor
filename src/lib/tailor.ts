@@ -1,4 +1,4 @@
-import { anthropic, MODEL, extractText, extractJson } from './claude';
+import { claudeCall, extractJson } from './claude';
 import { Profile } from './profile';
 import { JobParsed, CompanyResearch } from './job';
 
@@ -93,13 +93,9 @@ export async function tailorCV(args: {
   language: 'pl' | 'en';
 }): Promise<TailoredCV> {
   const system = args.language === 'pl' ? SYSTEM_PL : SYSTEM_EN;
-  const resp = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 8000,
+  const text = await claudeCall({
     system,
-    messages: [{
-      role: 'user',
-      content: `CANDIDATE PROFILE (source of truth, do not invent beyond this):
+    prompt: `CANDIDATE PROFILE (source of truth, do not invent beyond this):
 ${JSON.stringify(args.profile, null, 2)}
 
 JOB POSTING (parsed):
@@ -130,7 +126,6 @@ Produce a tailored CV in language "${args.language}". Schema:
 }
 
 Return only the JSON.`
-    }]
   });
-  return extractJson<TailoredCV>(extractText(resp));
+  return extractJson<TailoredCV>(text);
 }

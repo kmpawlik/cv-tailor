@@ -9,7 +9,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.32.1",
     "@types/adm-zip": "^0.5.8",
     "adm-zip": "^0.6.0",
     "better-sqlite3": "^11.5.0",

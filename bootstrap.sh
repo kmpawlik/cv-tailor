@@ -19,6 +19,12 @@ apt-get install -y --no-install-recommends \
   libxshmfence1 libxss1 || true
 apt-get install -y libasound2t64 || apt-get install -y libasound2 || true
 
+log "Installing Claude Code CLI"
+if ! command -v claude >/dev/null 2>&1; then
+  npm install -g @anthropic-ai/claude-code
+fi
+claude --version || true
+
 log "Cloning / updating repo"
 mkdir -p /opt
 cd /opt
@@ -45,13 +51,15 @@ if [ ! -f /opt/cv-tailor/.env.local ]; then
   cat > /opt/cv-tailor/.env.local <<EOF
 APP_PASSWORD=kamiluj123
 SESSION_SECRET=$(openssl rand -hex 32)
-ANTHROPIC_API_KEY=REPLACE_ME
+CLAUDE_CODE_OAUTH_TOKEN=REPLACE_ME
 DATA_DIR=/opt/cv-tailor/data
 NODE_ENV=production
 PORT=3200
 EOF
   echo "Created /opt/cv-tailor/.env.local"
 else
+  # Ensure CLAUDE_CODE_OAUTH_TOKEN exists
+  grep -q CLAUDE_CODE_OAUTH_TOKEN /opt/cv-tailor/.env.local || echo "CLAUDE_CODE_OAUTH_TOKEN=REPLACE_ME" >> /opt/cv-tailor/.env.local
   echo "Existing .env.local kept"
 fi
 
@@ -65,6 +73,7 @@ After=network.target
 Type=simple
 WorkingDirectory=/opt/cv-tailor
 EnvironmentFile=/opt/cv-tailor/.env.local
+Environment=HOME=/root
 ExecStart=/usr/bin/npm start
 Restart=on-failure
 RestartSec=5
@@ -93,10 +102,16 @@ DONE
   URL:      http://${IP}:3200
   Password: kamiluj123
 
-  Set your Claude API key:
-    nano /opt/cv-tailor/.env.local
-    (replace REPLACE_ME with your sk-ant-... key)
-    systemctl restart cv-tailor
+  NEXT: set your Claude subscription token.
+
+    On your Mac, run:
+      claude setup-token
+    Copy the sk-ant-oat01-... value.
+
+    Back on this server:
+      nano /opt/cv-tailor/.env.local
+      (replace REPLACE_ME on the CLAUDE_CODE_OAUTH_TOKEN line)
+      systemctl restart cv-tailor
 
   Logs: journalctl -u cv-tailor -f
 ============================================================

@@ -1,4 +1,4 @@
-import { anthropic, MODEL, extractText, extractJson } from './claude';
+import { claudeCall, extractJson } from './claude';
 import { LinkedInDump } from './linkedin';
 
 export type Profile = {
@@ -61,34 +61,20 @@ export async function buildProfile(args: {
   freeText?: string;
   links?: { label: string; url: string }[];
 }): Promise<Profile> {
-  const content: any[] = [];
-
   const parts: string[] = [
     'SCHEMA:\n' + SCHEMA_HINT,
     args.freeText ? 'FREE-TEXT NOTES:\n' + args.freeText : '',
     args.links?.length ? 'LINKS:\n' + args.links.map(l => `- ${l.label}: ${l.url}`).join('\n') : '',
-    args.linkedin ? 'LINKEDIN EXPORT (parsed CSV rows):\n' + JSON.stringify(args.linkedin, null, 2).slice(0, 60_000) : ''
+    args.linkedin ? 'LINKEDIN EXPORT (parsed CSV rows):\n' + JSON.stringify(args.linkedin, null, 2).slice(0, 60_000) : '',
+    'Return only the JSON object. No prose.'
   ].filter(Boolean);
 
-  content.push({ type: 'text', text: parts.join('\n\n') });
-
-  for (const cv of args.cvPdfs) {
-    content.push({
-      type: 'document',
-      source: { type: 'base64', media_type: 'application/pdf', data: cv.base64 },
-      title: cv.name
-    });
-  }
-
-  content.push({ type: 'text', text: 'Return only the JSON object. No prose.' });
-
-  const resp = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 8192,
+  const text = await claudeCall({
     system: SYSTEM,
-    messages: [{ role: 'user', content }]
+    prompt: parts.join('\n\n'),
+    pdfAttachments: args.cvPdfs,
+    maxTurns: 6
   });
 
-  const text = extractText(resp);
   return extractJson<Profile>(text);
 }
