@@ -7,7 +7,7 @@ const sessionOptions: SessionOptions = {
   password: process.env.SESSION_SECRET || 'insecure-dev-secret-32-chars-long-xxxx',
   cookieName: 'cv_tailor_session',
   cookieOptions: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: process.env.COOKIE_SECURE === 'true',
     httpOnly: true,
     sameSite: 'lax'
   }
